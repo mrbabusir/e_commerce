@@ -10,6 +10,9 @@ from users.permissions import *
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import SearchFilter,OrderingFilter
 from rest_framework.exceptions import PermissionDenied
+import stripe
+from projectcore import settings
+from rest_framework.views import APIView
 # Create your views here.
 class Pagination(PageNumberPagination):
     page_size = 10
@@ -40,8 +43,15 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     filter_backends =[SearchFilter,OrderingFilter]
     pagination_class = Pagination
-    search_fields = ['name','description']
+    search_fields = ['name','description','id']
     ordering_fields = ['id']
+    def perform_create(self, serializer):
+        user = self.request.user
+        if user.role == 'SUPPLIER':
+            serializer.save(supplier=user)
+        else:
+            serializer.save()
+
     def get_queryset(self):
         user = self.request.user        
         if hasattr(user,'role') and user.role == 'SUPPLIER': ##supplier ley login garda he can see only his product
@@ -99,6 +109,32 @@ class OrderListViewSet(viewsets.ModelViewSet):
             raise PermissionDenied('You can only update your assigned orders.')
 
         serializer.save()
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+    def create_payment_intent(self, request, pk=None):
+        try:
+            stripe.api_key = settings.STRIPE_SECRET_KEY
+            order = self.get_object()
+
+            # Amount in dollars → convert to cents
+            amount_cents = int(order.total_amount * 100)
+
+            intent = stripe.PaymentIntent.create(
+                amount=amount_cents,
+                currency="usd",
+                metadata={"order_id": order.id},
+            )
+
+            return Response({
+                "client_secret": intent.client_secret,
+                "message": "PaymentIntent created successfully."
+            }, status=status.HTTP_200_OK)
+            order.payment_status = 'PAID'
+            order.payment_method = 'STRIPE'
+            order.save()
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 class DeliveryTripViewSet(viewsets.ModelViewSet):
     queryset = DeliveryAssignment.objects.all()
     serializer_class = DeliveryAssignmentSerializer
@@ -117,3 +153,19 @@ class DeliveryTripViewSet(viewsets.ModelViewSet):
         if user.role == 'DELIVERY':
             return DeliveryAssignment.objects.filter(delivery_person=user)
         return super().get_queryset()
+# stripe.api_key = settings.STRIPE_SECRET_KEY
+
+# class CreatePaymentIntent(APIView):
+#     def post(self, request):
+#         try:
+#             # amount should be in cents (100 = $1.00)
+#             amount = int(request.data.get('amount', 100))  
+
+#             intent = stripe.PaymentIntent.create(
+#                 amount=amount,
+#                 currency='usd',
+#                 payment_method_types=['card'],
+#             )
+#             return Response({'client_secret': intent.client_secret})
+#         except Exception as e:
+#             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -19,6 +19,7 @@ from rest_framework.routers import DefaultRouter
 from users.views import *
 from products.views import *
 from django.contrib import admin
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 router = DefaultRouter()
 router.register(r'users', UserViewSet, basename='user')
 router.register(r'register', RegisterViewSet, basename='register')
@@ -28,9 +29,16 @@ router.register(r'orders', OrderListViewSet)
 router.register(r'deliveryassign', DeliveryTripViewSet)
 
 urlpatterns = [
+
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
     path('api/v1/', include(router.urls)),
     path('api/v1/login/', LoginView.as_view(), name='login'),
+    # path('create-payment-intent/', CreatePaymentIntent.as_view(), name='create-payment-intent'),
+    # YOUR PATTERNS
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Optional UI:
+    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
 ]

@@ -15,4 +15,4 @@ class User(AbstractUser):
     address = models.TextField(blank=True, null=True)
     
     def __str__(self):
-        return f"{self.username} ({self.role})"
+        return f"{self.username}"

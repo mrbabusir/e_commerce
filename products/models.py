@@ -33,10 +33,19 @@ class Order(models.Model):
         ('DELIVERED', 'Delivered'),
         ('CANCELLED', 'Cancelled'),
     )
+    PAYMENT_STATUS_CHOICES = (
+    ('PENDING','Pending'),
+    ('PAID','Paid'),
+    ('COD','Cash on Delivery'),
+    ('FAILED','Failed'),
+    )
+    
     customer = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'CUSTOMER'}, related_name='orders')
     products = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     order_date = models.DateTimeField(auto_now_add=True)
+    payment_status = models.CharField(max_length=10,choices=PAYMENT_STATUS_CHOICES,default='PENDING')
+    payment_method = models.CharField(max_length=10,choices=(('STRIPE','Stripe'),('CASH','Cash on Delivery')),default='CASH')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     shipping_address = models.TextField()

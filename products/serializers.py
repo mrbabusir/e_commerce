@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
         
 class ProductSerializer(serializers.ModelSerializer):
-    supplier = SupplierSerializer(read_only = True)
+    supplier = serializers.StringRelatedField(read_only = True)
     
     class Meta:
         model = Product
@@ -43,8 +43,8 @@ class OrderSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ['id', 'customer', 'products','quantity', 'shipping_address', 'status', 'total_amount','order_date']
-        read_only_fields = ['total_amount', 'status','customer','order_date']
+        fields = ['id', 'customer', 'products','quantity', 'shipping_address', 'status', 'payment_status', 'payment_method','total_amount','order_date']
+        read_only_fields = ['total_amount', 'status','customer','order_date', 'payment_status']
 
     def create(self, validated_data): ## total amount calculate gareko
         
