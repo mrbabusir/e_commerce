@@ -12,7 +12,9 @@ from rest_framework.filters import SearchFilter,OrderingFilter
 from rest_framework.exceptions import PermissionDenied
 import stripe
 from projectcore import settings
-from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
+from django.db.models import Sum, Count
+from rest_framework.response import Response
 # Create your views here.
 class Pagination(PageNumberPagination):
     page_size = 10
@@ -153,6 +155,44 @@ class DeliveryTripViewSet(viewsets.ModelViewSet):
         if user.role == 'DELIVERY':
             return DeliveryAssignment.objects.filter(delivery_person=user)
         return super().get_queryset()
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsAdmin])
+def admin_dashboard(request):
+    total_revenue = Order.objects.filter(payment_status='PAID').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    total_orders = Order.objects.count()
+
+    top_suppliers = (
+        Product.objects
+        .values('supplier__username')
+        .annotate(total_sales=Sum('order__total_amount'))
+        .order_by('-total_sales')[:5]
+    )
+
+    return Response({
+        'total_revenue': total_revenue,
+        'total_orders': total_orders,
+        'top_suppliers': top_suppliers
+    })
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsSupplier])
+def supplier_dashboard(request):
+    user = request.user
+    total_products = Product.objects.filter(supplier=user).count()
+    low_stock = Product.objects.filter(supplier=user, stock_quantity__lt=10).count()
+    delivered_orders = Order.objects.filter(products__supplier=user, status='DELIVERED').count()
+    pending_orders = Order.objects.filter(products__supplier=user, status__in=['PENDING', 'PROCESSING']).count()
+
+    return Response({
+        'total_products': total_products,
+        'low_stock_products': low_stock,
+        'delivered_orders': delivered_orders,
+        'pending_orders': pending_orders
+    })
+
+
 # stripe.api_key = settings.STRIPE_SECRET_KEY
 
 # class CreatePaymentIntent(APIView):

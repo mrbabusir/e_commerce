@@ -36,7 +36,8 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
     path('api/v1/', include(router.urls)),
     path('api/v1/login/', LoginView.as_view(), name='login'),
-
+    path('analytics/admin/', admin_dashboard),
+    path('analytics/supplier/', supplier_dashboard),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
