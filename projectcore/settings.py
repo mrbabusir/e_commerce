@@ -28,12 +28,12 @@ load_dotenv()
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')   
+SECRET_KEY = os.environ.get('SECRET_KEY')   
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOST").split(" ")
 
 
 # Application definition
@@ -109,19 +109,19 @@ WSGI_APPLICATION = 'projectcore.wsgi.application'
 # }
 
 # Database configuration
+
+
+# Use PostgreSQL if DATABASE_URL exists (on Render), otherwise SQLite for local dev
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        "ENGINE": "django.db.backend.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
+    
 }
+database_url = os.environ.get("DATABASE_URL")
+DATABASES['default'] = dj_database_url.parse(database_url)
 
-# Override with DATABASE_URL if it exists (for production)
-db_from_env = dj_database_url.config(conn_max_age=600)
-if db_from_env:
-    DATABASES['default'].update(db_from_env)
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
