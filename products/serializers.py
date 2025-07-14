@@ -6,11 +6,12 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
         
 class ProductSerializer(serializers.ModelSerializer):
-    supplier = serializers.StringRelatedField(read_only = True)
-    
+    category_name = serializers.CharField(source='category.name', read_only=True)
+
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = ['id', 'supplier', 'name', 'description', 'price', 'stock_quantity',
+                  'image', 'created_at', 'updated_at', 'category', 'category_name']
 class CategoryListSerializer(serializers.ModelSerializer): 
     class Meta:
         model = Category
