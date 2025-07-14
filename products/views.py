@@ -98,7 +98,8 @@ class OrderListViewSet(viewsets.ModelViewSet):
             return Order.objects.filter(customer=user) ## customer ley aafno order matrai herna milney
         elif user.role == 'DELIVERY':
             return Order.objects.filter(delivery_person=user) ## delivery personnel le afulai assign bhayeko order matrai herna milney
-            
+        elif user.role == 'SUPPLIER':
+            return Order.objects.filter(products__supplier=user).distinct() ##,distint() ley duplicate order haru repeat huna nadina
         return Order.objects.all()
     def perform_update(self, serializer):
         user = self.request.user
@@ -126,14 +127,13 @@ class OrderListViewSet(viewsets.ModelViewSet):
                 currency="usd",
                 metadata={"order_id": order.id},
             )
-
+            order.payment_status = 'PAID'
+            order.payment_method = 'STRIPE'
+            order.save()
             return Response({
                 "client_secret": intent.client_secret,
                 "message": "PaymentIntent created successfully."
             }, status=status.HTTP_200_OK)
-            order.payment_status = 'PAID'
-            order.payment_method = 'STRIPE'
-            order.save()
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
