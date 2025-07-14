@@ -159,33 +159,22 @@ class DeliveryTripViewSet(viewsets.ModelViewSet):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, IsAdmin])
 def admin_dashboard(request):
-    # Get optional min/max total sales filter from query params
-    min_sales = request.GET.get('min_sales')
-    max_sales = request.GET.get('max_sales')
+    total_revenue = Order.objects.filter(payment_status='PAID').aggregate(
+        total=Sum('total_amount'))['total'] or 0
+    total_orders = Order.objects.count()
 
-    # Aggregate sales per supplier
-    supplier_sales = (
+    top_suppliers = (
         Product.objects
-        .filter(order__payment_status='PAID')  # only paid orders
+        .filter(order__payment_status='PAID')
         .values('supplier__username')
         .annotate(total_sales=Sum('order__total_amount'))
+        .order_by('-total_sales')[:5]
     )
 
-    # Filter by min_sales and/or max_sales
-    if min_sales:
-        supplier_sales = supplier_sales.filter(total_sales__gte=min_sales)
-    if max_sales:
-        supplier_sales = supplier_sales.filter(total_sales__lte=max_sales)
-
-    # Order by total_sales descending
-    top_suppliers = supplier_sales.order_by('-total_sales')[:5]
-
     return Response({
+        'total_revenue': total_revenue,
+        'total_orders': total_orders,
         'top_suppliers': list(top_suppliers),
-        'filters_applied': {
-            'min_sales': min_sales,
-            'max_sales': max_sales
-        }
     })
 # @api_view(['GET'])
 # @permission_classes([IsAuthenticated, IsAdmin])
@@ -208,18 +197,40 @@ def admin_dashboard(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, IsSupplier])
 def supplier_dashboard(request):
-    user = request.user
-    total_products = Product.objects.filter(supplier=user).count()
-    low_stock = Product.objects.filter(supplier=user, stock_quantity__lt=10).count()
-    delivered_orders = Order.objects.filter(products__supplier=user, status='DELIVERED').count()
-    pending_orders = Order.objects.filter(products__supplier=user, status__in=['PENDING', 'PROCESSING']).count()
+    supplier = request.user
+
+    # Total products count & total stock for this supplier
+    total_products = Product.objects.filter(supplier=supplier).count()
+    total_stock = Product.objects.filter(supplier=supplier).aggregate(
+        total=Sum('stock_quantity'))['total'] or 0
+
+    # Orders for supplier's products grouped by status
+    delivery_status = (
+        Order.objects.filter(products__supplier=supplier)
+        .values('status')
+        .annotate(count=Count('id'))
+    )
 
     return Response({
         'total_products': total_products,
-        'low_stock_products': low_stock,
-        'delivered_orders': delivered_orders,
-        'pending_orders': pending_orders
+        'total_stock': total_stock,
+        'delivery_status_counts': list(delivery_status),
     })
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated, IsSupplier])
+# def supplier_dashboard(request):
+#     user = request.user
+#     total_products = Product.objects.filter(supplier=user).count()
+#     low_stock = Product.objects.filter(supplier=user, stock_quantity__lt=10).count()
+#     delivered_orders = Order.objects.filter(products__supplier=user, status='DELIVERED').count()
+#     pending_orders = Order.objects.filter(products__supplier=user, status__in=['PENDING', 'PROCESSING']).count()
+
+#     return Response({
+#         'total_products': total_products,
+#         'low_stock_products': low_stock,
+#         'delivered_orders': delivered_orders,
+#         'pending_orders': pending_orders
+#     })
 
 
 # stripe.api_key = settings.STRIPE_SECRET_KEY
