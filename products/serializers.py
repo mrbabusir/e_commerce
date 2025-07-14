@@ -74,14 +74,13 @@ class DeliveryAssignmentSerializer(serializers.ModelSerializer):
     status = serializers.ChoiceField(choices=Order.STATUS_CHOICES)
     class Meta:
         model = DeliveryAssignment
-        fields = ['id', 'delivery_person','delivery_person_name', 'orders', 'status', 'assigned_at']
+        fields = ['id','delivery_person_name', 'orders', 'status', 'assigned_at']
     def get_fields(self):
         fields = super().get_fields()
         user = self.context['request'].user
  
-        if user.role == 'DELIVERY':      ##yedi  user ko role Delivery cha bhane status bhahek baki fields read only rakheko 
-            fields['delivery_person'].read_only = True
-            fields['orders'].read_only = True
-            fields['assigned_at'].read_only = True
-
+        if user.role == 'DELIVERY':
+            for field_name in fields:      ##yedi  user ko role Delivery cha bhane status bhahek baki fields read only rakheko 
+                if field_name != 'status':
+                    fields[field_name].read_only = True
         return fields
