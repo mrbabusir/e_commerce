@@ -77,10 +77,22 @@ class DeliveryAssignmentSerializer(serializers.ModelSerializer):
         fields = ['id','delivery_person_name', 'orders', 'status', 'assigned_at']
     def get_fields(self):
         fields = super().get_fields()
-        user = self.context['request'].user
- 
-        if user.role == 'DELIVERY':
-            for field_name in fields:      ##yedi  user ko role Delivery cha bhane status bhahek baki fields read only rakheko 
+        request = self.context.get('request', None)
+        user = getattr(request, 'user', None) if request else None
+    
+        if user and hasattr(user, 'role') and user.role == 'DELIVERY':
+            for field_name in fields:
                 if field_name != 'status':
                     fields[field_name].read_only = True
         return fields
+
+    # def get_fields(self):
+    #     fields = super().get_fields()
+    #     user = self.context['request'].user
+        
+ 
+    #     # if user.role == 'DELIVERY':
+    #     #     for field_name in fields:      ##yedi  user ko role Delivery cha bhane status bhahek baki fields read only rakheko 
+    #     #         if field_name != 'status':
+    #     #             fields[field_name].read_only = True
+    #     # return fields

@@ -154,7 +154,9 @@ class DeliveryTripViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.role == 'DELIVERY':
             return DeliveryAssignment.objects.filter(delivery_person=user)
-        return super().get_queryset()
+        return DeliveryAssignment.objects.all()
+        # return super().get_queryset()
+
 
 
 
