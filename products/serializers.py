@@ -7,11 +7,12 @@ User = get_user_model()
         
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
+    supplier_name = serializers.CharField(source='supplier.name', read_only = True)
 
     class Meta:
         model = Product
-        fields = ['id', 'supplier', 'name', 'description', 'price', 'stock_quantity',
-                  'image', 'created_at', 'updated_at', 'category', 'category_name']
+        fields = ['id', 'supplier_name', 'name', 'description', 'price', 'stock_quantity',
+                  'image', 'created_at', 'updated_at', 'category_name']
 class CategoryListSerializer(serializers.ModelSerializer): 
     class Meta:
         model = Category
