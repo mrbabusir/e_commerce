@@ -155,29 +155,56 @@ class DeliveryTripViewSet(viewsets.ModelViewSet):
         if user.role == 'DELIVERY':
             return DeliveryAssignment.objects.filter(delivery_person=user)
         return DeliveryAssignment.objects.all()
-        # return super().get_queryset()
-
-
-
-
+    
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, IsAdmin])
 def admin_dashboard(request):
-    total_revenue = Order.objects.filter(payment_status='PAID').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
-    total_orders = Order.objects.count()
+    # Get optional min/max total sales filter from query params
+    min_sales = request.GET.get('min_sales')
+    max_sales = request.GET.get('max_sales')
 
-    top_suppliers = (
+    # Aggregate sales per supplier
+    supplier_sales = (
         Product.objects
+        .filter(order__payment_status='PAID')  # only paid orders
         .values('supplier__username')
         .annotate(total_sales=Sum('order__total_amount'))
-        .order_by('-total_sales')[:5]
     )
 
+    # Filter by min_sales and/or max_sales
+    if min_sales:
+        supplier_sales = supplier_sales.filter(total_sales__gte=min_sales)
+    if max_sales:
+        supplier_sales = supplier_sales.filter(total_sales__lte=max_sales)
+
+    # Order by total_sales descending
+    top_suppliers = supplier_sales.order_by('-total_sales')[:5]
+
     return Response({
-        'total_revenue': total_revenue,
-        'total_orders': total_orders,
-        'top_suppliers': top_suppliers
+        'top_suppliers': list(top_suppliers),
+        'filters_applied': {
+            'min_sales': min_sales,
+            'max_sales': max_sales
+        }
     })
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated, IsAdmin])
+# def admin_dashboard(request):
+#     total_revenue = Order.objects.filter(payment_status='PAID').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+#     total_orders = Order.objects.count()
+
+#     top_suppliers = (
+#         Product.objects
+#         .values('supplier__username')
+#         .annotate(total_sales=Sum('order__total_amount'))
+#         .order_by('-total_sales')[:5]
+#     )
+
+#     return Response({
+#         'total_revenue': total_revenue,
+#         'total_orders': total_orders,
+#         'top_suppliers': top_suppliers
+#     })
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, IsSupplier])
 def supplier_dashboard(request):

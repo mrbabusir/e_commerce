@@ -67,7 +67,7 @@ class OrderStatusSerializer(serializers.ModelSerializer):
 
 
 class DeliveryAssignmentSerializer(serializers.ModelSerializer):
-    
+
     delivery_person = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.filter(role='DELIVERY')
     )
@@ -92,41 +92,3 @@ class DeliveryAssignmentSerializer(serializers.ModelSerializer):
         return fields
 
 
-
-# class DeliveryAssignmentSerializer(serializers.ModelSerializer):
-#     # delivery_person = serializers.PrimaryKeyRelatedField(source = 'delivery_person.username',read_only=True)
-#     delivery_person = serializers.PrimaryKeyRelatedField(
-#         queryset=User.objects.filter(role='DELIVERY')
-#     )
-#     delivery_person_name = serializers.CharField(source='delivery_person.username', read_only=True)
-#     status = serializers.ChoiceField(choices=Order.STATUS_CHOICES)
-#     class Meta:
-#         model = DeliveryAssignment
-#         fields = ['id','delivery_person','delivery_person_name', 'orders', 'status', 'assigned_at']
-#     # def get_fields(self):
-#     #     print("Serializer get_fields called")
-#     #     print("Context keys:", self.context.keys())
-#     #     fields = super().get_fields()
-#     # # rest as above
-#     #     return fields
-#     def get_fields(self):
-#         fields = super().get_fields()
-#         request = self.context.get('request')
-#         user = getattr(request, 'user', None) if request else None
-    
-#         if user and hasattr(user, 'role') and user.role == 'DELIVERY':
-#             for field_name in fields:
-#                 if field_name != 'status':
-#                     fields[field_name].read_only = True
-#         return fields
-
-    # def get_fields(self):
-    #     fields = super().get_fields()
-    #     user = self.context['request'].user
-        
- 
-    #     # if user.role == 'DELIVERY':
-    #     #     for field_name in fields:      ##yedi  user ko role Delivery cha bhane status bhahek baki fields read only rakheko 
-    #     #         if field_name != 'status':
-    #     #             fields[field_name].read_only = True
-    #     # return fields
