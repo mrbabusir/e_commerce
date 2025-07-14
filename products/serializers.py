@@ -66,11 +66,15 @@ class OrderStatusSerializer(serializers.ModelSerializer):
     fields = ['id','status']
 
 class DeliveryAssignmentSerializer(serializers.ModelSerializer):
-    delivery_person = serializers.CharField(source = 'delivery_person.username',read_only=True)
+    # delivery_person = serializers.PrimaryKeyRelatedField(source = 'delivery_person.username',read_only=True)
+    delivery_person = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.filter(role='DELIVERY')
+    )
+    delivery_person_name = serializers.CharField(source='delivery_person.username', read_only=True)
     status = serializers.ChoiceField(choices=Order.STATUS_CHOICES)
     class Meta:
         model = DeliveryAssignment
-        fields = ['id', 'delivery_person', 'orders', 'status', 'assigned_at']
+        fields = ['id', 'delivery_person','delivery_person_name', 'orders', 'status', 'assigned_at']
     def get_fields(self):
         fields = super().get_fields()
         user = self.context['request'].user
